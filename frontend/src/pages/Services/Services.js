@@ -340,7 +340,7 @@ const Services = () => {
 
         {/* Statistics */}
         <Row gutter={16} className="stats-row">
-          <Col span={6}>
+          <Col span={8}>
             <Card>
               <Statistic
                 title="Tổng dịch vụ"
@@ -349,7 +349,7 @@ const Services = () => {
               />
             </Card>
           </Col>
-          <Col span={6}>
+          <Col span={8}>
             <Card>
               <Statistic
                 title="Đang phục vụ"
@@ -359,23 +359,12 @@ const Services = () => {
               />
             </Card>
           </Col>
-          <Col span={6}>
+          <Col span={8}>
             <Card>
               <Statistic
                 title="Danh mục"
                 value={stats.totalCategories}
                 prefix={<AppstoreOutlined />}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Giá trung bình"
-                value={stats.avgPrice}
-                prefix={<DollarOutlined />}
-                suffix="VND"
-                precision={0}
               />
             </Card>
           </Col>

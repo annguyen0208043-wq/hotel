@@ -5,7 +5,6 @@ import {
   Popconfirm, Timeline, Rate, Input
 } from 'antd';
 import SafeTable from '../Common/SafeTable';
-import SimpleTable from '../Common/SimpleTable';
 import {
   CalendarOutlined, HomeOutlined, CheckCircleOutlined,
   ClockCircleOutlined, ExclamationCircleOutlined, 
@@ -37,24 +36,15 @@ const MyBookings = () => {
     setLoading(true);
     
     try {
-      console.log('Fetching my bookings...');
       const response = await api.get('/api/rooms/bookings/my_bookings/');
-      console.log('API Response:', response);
       
       // Validate and process response
       let bookingsData = [];
       if (response?.data) {
-        console.log('Response data type:', typeof response.data);
-        console.log('Response data:', response.data);
-        
         if (Array.isArray(response.data)) {
           bookingsData = response.data;
-          console.log('Data is array, length:', bookingsData.length);
         } else if (response.data.results && Array.isArray(response.data.results)) {
           bookingsData = response.data.results;
-          console.log('Data.results is array, length:', bookingsData.length);
-        } else {
-          console.error('Unexpected response format:', response.data);
         }
       }
       
@@ -153,123 +143,105 @@ const MyBookings = () => {
 
 
 
-  // Memoize columns to prevent re-renders
-  const memoizedColumns = useMemo(() => {
-    const columns = [
-      {
-        title: 'Mã đặt phòng',
-        dataIndex: 'booking_id',
-        key: 'booking_id',
-        render: (text) => <Text code>{text || 'N/A'}</Text>
-      },
-      {
-        title: 'Phòng',
-        key: 'room',
-        render: (_, record) => {
-          const roomDetail = record.room_detail || {};
-          return (
-            <div>
-              <Text strong>Phòng {roomDetail.room_number || 'N/A'}</Text>
-              <br />
-              <Text type="secondary">{roomDetail.room_type?.name || 'N/A'}</Text>
-            </div>
-          );
-        }
-      },
-      {
-        title: 'Thời gian',
-        key: 'dates',
-        render: (_, record) => {
-          if (!record.check_in_date || !record.check_out_date) {
-            return <Text type="secondary">Chưa có thông tin</Text>;
-          }
-          
-          return (
-            <div>
-              <div>📅 {moment(record.check_in_date).format('DD/MM/YYYY')}</div>
-              <div>📅 {moment(record.check_out_date).format('DD/MM/YYYY')}</div>
-              <Text type="secondary">
-                ({moment(record.check_out_date).diff(moment(record.check_in_date), 'days')} đêm)
-              </Text>
-            </div>
-          );
-        }
-      },
-      {
-        title: 'Trạng thái',
-        key: 'status',
-        render: (_, record) => (
-          <Tag color={getStatusColor(record.status)} icon={getStatusIcon(record.status)}>
-            {getStatusText(record.status)}
-          </Tag>
-        )
-      },
-      {
-        title: 'Tổng tiền',
-        dataIndex: 'total_amount',
-        key: 'total_amount',
-        render: (amount) => (
-          <Text strong style={{ color: '#1890ff' }}>
-            {amount ? new Intl.NumberFormat('vi-VN', { 
-              style: 'currency', 
-              currency: 'VND' 
-            }).format(amount) : '0 VND'}
+  const columns = [
+    {
+      title: 'Mã đặt phòng',
+      dataIndex: 'booking_id',
+      key: 'booking_id',
+      render: (text) => <Text code>{text}</Text>
+    },
+    {
+      title: 'Phòng',
+      key: 'room',
+      render: (_, record) => (
+        <div>
+          <Text strong>Phòng {record.room_detail?.room_number}</Text>
+          <br />
+          <Text type="secondary">{record.room_detail?.room_type?.name}</Text>
+        </div>
+      )
+    },
+    {
+      title: 'Thời gian',
+      key: 'dates',
+      render: (_, record) => (
+        <div>
+          <div>📅 {moment(record.check_in_date).format('DD/MM/YYYY')}</div>
+          <div>📅 {moment(record.check_out_date).format('DD/MM/YYYY')}</div>
+          <Text type="secondary">
+            ({moment(record.check_out_date).diff(moment(record.check_in_date), 'days')} đêm)
           </Text>
-        )
-      },
-      {
-        title: 'Hành động',
-        key: 'action',
-        render: (_, record) => {
-          const actions = [];
+        </div>
+      )
+    },
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      render: (_, record) => (
+        <Tag color={getStatusColor(record.status)} icon={getStatusIcon(record.status)}>
+          {getStatusText(record.status)}
+        </Tag>
+      )
+    },
+    {
+      title: 'Tổng tiền',
+      dataIndex: 'total_amount',
+      key: 'total_amount',
+      render: (amount) => (
+        <Text strong style={{ color: '#1890ff' }}>
+          {Number(amount).toLocaleString()} VND
+        </Text>
+      )
+    },
+    {
+      title: 'Hành động',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="primary"
+            ghost
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={() => viewBookingDetail(record)}
+          >
+            Chi tiết
+          </Button>
           
-          actions.push(
-            <Button 
-              key="view"
-              type="link" 
-              icon={<EyeOutlined />} 
-              onClick={() => viewBookingDetail(record)}
+          {record.status === 'pending' && (
+            <Popconfirm
+              title="Bạn có chắc chắn muốn hủy đặt phòng này?"
+              onConfirm={() => cancelBooking(record.id)}
+              okText="Có"
+              cancelText="Không"
             >
-              Chi tiết
-            </Button>
-          );
-
-          if (record.status === 'pending' || record.status === 'confirmed') {
-            actions.push(
-              <Popconfirm
-                key="cancel"
-                title="Bạn có chắc muốn hủy đặt phòng?"
-                onConfirm={() => cancelBooking(record.id)}
-                okText="Có"
-                cancelText="Không"
+              <Button
+                danger
+                icon={<CloseCircleOutlined />}
+                size="small"
               >
-                <Button type="link" danger icon={<CloseCircleOutlined />}>
-                  Hủy
-                </Button>
-              </Popconfirm>
-            );
-          }
-
-          if (record.status === 'checked_out') {
-            actions.push(
-              <Button 
-                key="review"
-                type="link" 
-                icon={<StarOutlined />} 
-                onClick={() => openReviewModal(record)}
-              >
-                Đánh giá
+                Hủy
               </Button>
-            );
-          }
+            </Popconfirm>
+          )}
+          
+          {record.status === 'checked_out' && (
+            <Button
+              type="primary"
+              icon={<StarOutlined />}
+              size="small"
+              onClick={() => openReviewModal(record)}
+            >
+              Đánh giá
+            </Button>
+          )}
+        </Space>
+      )
+    }
+  ];
 
-          return <Space>{actions}</Space>;
-        }
-      }
-    ];
-    
-    return columns;
-  }, []);
+  // Memoize columns to prevent re-renders
+  const memoizedColumns = useMemo(() => columns, []);
 
   // Ensure dataSource is always a safe array
   const tableDataSource = useMemo(() => {
@@ -278,36 +250,18 @@ const MyBookings = () => {
       return [];
     }
     
-    return bookings.filter(booking => booking && typeof booking === 'object').map((booking, index) => {
-      // Create a completely clean object with only the fields we need
-      const safeItem = {
-        key: booking.id || `booking-${index}`,
-        id: booking.id || null,
-        booking_id: booking.booking_id || '',
-        status: booking.status || '',
-        check_in_date: booking.check_in_date || '',
-        check_out_date: booking.check_out_date || '',
-        total_amount: booking.total_amount || 0,
-        adults: booking.adults || 1,
-        children: booking.children || 0,
-        special_requests: booking.special_requests || '',
-        created_at: booking.created_at || '',
-        updated_at: booking.updated_at || '',
-        // Keep objects as references for render functions
-        room_detail: booking.room_detail || {},
-        customer_detail: booking.customer_detail || {},
-        created_by_detail: booking.created_by_detail || {}
-      };
-      
-      return safeItem;
-    });
+    return bookings.filter(booking => booking && typeof booking === 'object').map((booking, index) => ({
+      key: booking.id || `booking-${index}`,
+      id: booking.id,
+      booking_id: booking.booking_id || '',
+      status: booking.status || '',
+      check_in_date: booking.check_in_date || '',
+      check_out_date: booking.check_out_date || '',
+      total_amount: booking.total_amount || 0,
+      room_detail: booking.room_detail || {},
+      ...booking
+    }));
   }, [bookings]);
-
-  // Debug log to check final data structure
-  console.log('Final tableDataSource:', tableDataSource);
-  console.log('TableDataSource type:', typeof tableDataSource);
-  console.log('TableDataSource isArray:', Array.isArray(tableDataSource));
-  console.log('TableDataSource length:', tableDataSource?.length || 0);
 
   return (
     <div>
@@ -362,16 +316,16 @@ const MyBookings = () => {
             <div>Đang tải...</div>
           </div>
         ) : (
-          <SimpleTable
+          <SafeTable
             columns={memoizedColumns}
-            dataSource={Array.isArray(tableDataSource) ? tableDataSource : []}
+            dataSource={tableDataSource}
             loading={false}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
               showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} đặt phòng`,
             }}
-            rowKey="key"
+            scroll={{ x: 800 }}
           />
         )}
       </Card>

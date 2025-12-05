@@ -11,30 +11,11 @@ const SafeTable = ({ dataSource, columns, loading, ...props }) => {
     const validData = dataSource.filter(item => item && typeof item === 'object');
     
     return validData.map((item, index) => {
-      // Create a completely flat copy to avoid nested object issues
-      const flatItem = {};
-      
-      // Copy all primitive values
-      Object.keys(item).forEach(key => {
-        const value = item[key];
-        if (value === null || value === undefined) {
-          flatItem[key] = value;
-        } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-          flatItem[key] = value;
-        } else if (Array.isArray(value)) {
-          flatItem[key] = value; // Keep arrays as is
-        } else if (typeof value === 'object') {
-          // For objects, keep reference but ensure it's safe
-          flatItem[key] = value;
-        } else {
-          flatItem[key] = String(value); // Convert other types to string
-        }
-      });
-      
-      // Ensure key exists
-      flatItem.key = item.key || item.id || item.booking_id || `safe-row-${index}`;
-      
-      return flatItem;
+      // Create a safe copy with guaranteed key
+      return {
+        ...item,
+        key: item.key || item.id || item.booking_id || `safe-row-${index}`
+      };
     });
   }, [dataSource]);
   
@@ -74,28 +55,14 @@ const SafeTable = ({ dataSource, columns, loading, ...props }) => {
 
   // Render the table with error boundary
   try {
-    const tableProps = {
-      dataSource: safeDataSource,
-      columns: safeColumns,
-      rowKey: (record) => record.key || record.id || record.booking_id || Math.random().toString(36),
-      pagination: {
-        showSizeChanger: true,
-        showQuickJumper: false,
-        showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
-        ...(props.pagination || {})
-      },
-      size: props.size || "middle",
-      bordered: props.bordered || false,
-      rowSelection: null, // Explicitly disable to avoid selection issues
-      expandable: null, // Explicitly disable expandable
-      ...props
-    };
-    
-    // Remove potentially problematic props
-    delete tableProps.rowSelection;
-    delete tableProps.expandable;
-    
-    return <AntTable {...tableProps} />;
+    return (
+      <AntTable
+        {...props}
+        dataSource={safeDataSource}
+        columns={safeColumns}
+        rowKey={(record) => record.key || record.id || record.booking_id || Math.random().toString(36)}
+      />
+    );
   } catch (error) {
     console.error('Table render error:', error);
     return (

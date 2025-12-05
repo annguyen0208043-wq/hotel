@@ -38,8 +38,7 @@ class RevenueReport(models.Model):
 
 class CustomerLoyalty(models.Model):
     """Khách hàng thân thiết"""
-    customer = models.OneToOneField(Account, on_delete=models.CASCADE, related_name='loyalty', 
-                                   limit_choices_to={'user_type': 'customer'})
+    customer = models.OneToOneField('customers.Customer', on_delete=models.CASCADE, related_name='loyalty')
     total_bookings = models.IntegerField(default=0)
     total_nights = models.IntegerField(default=0)
     total_spent = models.DecimalField(max_digits=15, decimal_places=2, default=0)
@@ -57,10 +56,10 @@ class CustomerLoyalty(models.Model):
     
     def update_loyalty(self):
         """Cập nhật thông tin khách hàng thân thiết"""
-        bookings = Booking.objects.filter(customer=self.customer, status='checked_out')
+        bookings = self.customer.bookings.filter(status='checked_out')
         self.total_bookings = bookings.count()
         self.total_nights = sum([(b.check_out_date - b.check_in_date).days for b in bookings])
-        self.total_spent = sum([b.paid_amount or 0 for b in bookings])
+        self.total_spent = sum([b.total_amount or 0 for b in bookings])
         
         # Tính points (1 đêm = 10 points, 1000 VND = 1 point)
         self.loyalty_points = self.total_nights * 10 + int(self.total_spent / 1000)

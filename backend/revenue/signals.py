@@ -1,42 +1,20 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from rooms.models import Booking
-from .models import RevenueReport, CustomerLoyalty, Payment, PaymentMethod
+from .models import RevenueReport, CustomerLoyalty
 from datetime import date, timedelta
 from django.db.models import Sum, Count, Avg
-from django.utils import timezone
 import logging
-import uuid
 
 logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Booking)
 def update_revenue_on_checkout(sender, instance, created, **kwargs):
-    """Cập nhật doanh thu và tạo payment record khi booking checkout"""
-    if instance.status == 'checked_out' and instance.paid_amount > 0:
+    """Cập nhật doanh thu khi booking checkout"""
+    if instance.status == 'checked_out' and instance.total_amount:
         try:
-            # Tạo payment record nếu chưa có
-            if not Payment.objects.filter(booking=instance).exists():
-                # Lấy payment method mặc định hoặc tạo mới
-                payment_method, _ = PaymentMethod.objects.get_or_create(
-                    name='Tiền mặt',
-                    defaults={'description': 'Thanh toán bằng tiền mặt', 'is_active': True}
-                )
-                
-                # Tạo payment record
-                payment_id = f"PAY{timezone.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
-                Payment.objects.create(
-                    payment_id=payment_id,
-                    payment_type='booking',
-                    booking=instance,
-                    payment_method=payment_method,
-                    amount=instance.paid_amount,
-                    notes=f'Thanh toán cho booking {instance.booking_id} - Checkout tự động'
-                )
-                logger.info(f"Created payment record {payment_id} for booking {instance.booking_id}")
-            
             # Cập nhật doanh thu theo ngày checkout
-            checkout_date = instance.actual_check_out.date() if instance.actual_check_out else date.today()
+            checkout_date = instance.check_out_date
             update_daily_revenue(checkout_date)
             
             # Cập nhật thông tin khách hàng thân thiết
@@ -46,34 +24,28 @@ def update_revenue_on_checkout(sender, instance, created, **kwargs):
                 )
                 loyalty.update_loyalty()
                 
-            logger.info(f"Revenue updated for booking {instance.booking_id} - {instance.paid_amount}")
+            logger.info(f"Revenue updated for booking {instance.id} - {instance.total_amount}")
             
         except Exception as e:
-            logger.error(f"Error updating revenue for booking {instance.booking_id}: {str(e)}")
+            logger.error(f"Error updating revenue for booking {instance.id}: {str(e)}")
 
 
 def update_daily_revenue(target_date):
     """Cập nhật doanh thu cho ngày cụ thể"""
     
     # Tính doanh thu phòng cho ngày này (các booking checkout trong ngày)
-    # Sử dụng __date lookup để ignore timezone  
     daily_bookings = Booking.objects.filter(
-        actual_check_out__date=target_date,
-        status='checked_out',
-        paid_amount__gt=0
+        check_out_date=target_date,
+        status='checked_out'
     )
     
-    print(f"DEBUG: Tìm thấy {daily_bookings.count()} bookings checkout ngày {target_date}")
-    
     room_revenue = daily_bookings.aggregate(
-        total=Sum('paid_amount')
+        total=Sum('total_amount')
     )['total'] or 0
-    
-    print(f"DEBUG: Room revenue = {room_revenue}")
     
     total_bookings = daily_bookings.count()
     total_guests = daily_bookings.aggregate(
-        total=Sum('adults')  # Sử dụng field adults thay vì number_of_guests
+        total=Sum('number_of_guests')
     )['total'] or 0
     
     total_nights = sum([

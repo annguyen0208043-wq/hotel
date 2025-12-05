@@ -14,7 +14,6 @@ import Rooms from './pages/Rooms/Rooms';
 import RoomTypes from './pages/Rooms/RoomTypes';
 import Bookings from './pages/Bookings/Bookings';
 import Services from './pages/Services/Services';
-import ServiceOrders from './pages/Services/ServiceOrders';
 import Revenue from './pages/Revenue/Revenue';
 import Reports from './pages/Reports/Reports';
 import BookRoom from './components/Customer/BookRoom';
@@ -174,7 +173,6 @@ function App() {
                       <Route path="/room-types" element={<RoomTypes />} />
                       <Route path="/bookings" element={<Bookings />} />
                       <Route path="/services" element={<Services />} />
-                      <Route path="/service-orders" element={<ServiceOrders />} />
                       <Route path="/revenue" element={<Revenue />} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/" element={<Navigate to="/admin-dashboard" />} />

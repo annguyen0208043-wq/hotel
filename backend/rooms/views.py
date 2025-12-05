@@ -84,26 +84,6 @@ class BookingViewSet(viewsets.ModelViewSet):
             return BookingCreateSerializer
         return BookingSerializer
     
-    def create(self, request, *args, **kwargs):
-        """Override create để debug lỗi"""
-        print(f"DEBUG: Booking creation request data: {request.data}")
-        
-        serializer = self.get_serializer(data=request.data)
-        
-        if not serializer.is_valid():
-            print(f"DEBUG: Serializer validation errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        except Exception as e:
-            print(f"DEBUG: Error during perform_create: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
     def perform_update(self, serializer):
         """Tự động cập nhật trạng thái phòng khi thay đổi trạng thái booking"""
         old_status = self.get_object().status
@@ -248,20 +228,10 @@ class BookingViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def my_bookings(self, request):
         """Get current user's bookings"""
-        print(f"DEBUG: my_bookings called by user: {request.user}")
-        
         if not request.user.is_authenticated:
-            print("DEBUG: User not authenticated")
             return Response({'error': 'Authentication required'}, 
                            status=status.HTTP_401_UNAUTHORIZED)
         
         bookings = Booking.objects.filter(customer=request.user).order_by('-created_at')
-        print(f"DEBUG: Found {bookings.count()} bookings for user {request.user}")
-        
         serializer = self.get_serializer(bookings, many=True)
-        response_data = serializer.data
-        
-        print(f"DEBUG: Serialized data type: {type(response_data)}")
-        print(f"DEBUG: Serialized data length: {len(response_data) if isinstance(response_data, list) else 'Not a list'}")
-        
-        return Response(response_data)
+        return Response(serializer.data)
