@@ -3,21 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ant-design/charts": "^2.6.6",
+    "@ant-design/icons": "^5.2.6",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "antd": "^5.12.7",
+    "axios": "^1.6.2",
+    "dayjs": "^1.11.19",
+    "js-cookie": "^3.0.5",
+    "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "react-router-dom": "^6.8.1",
-    "axios": "^1.6.2",
-    "antd": "^5.12.7",
-    "@ant-design/icons": "^5.2.6",
-    "moment": "^2.29.4",
-    "recharts": "^2.8.0",
     "react-query": "^3.39.3",
-    "js-cookie": "^3.0.5",
-    "dayjs": "^1.11.10"
+    "react-router-dom": "^6.8.1",
+    "react-scripts": "5.0.1",
+    "recharts": "^2.8.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -42,5 +43,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "proxy": "http://127.0.0.1:8000"
 }

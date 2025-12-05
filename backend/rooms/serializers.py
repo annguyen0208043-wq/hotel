@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Room, RoomType, Booking
-from customers.serializers import CustomerSerializer
-from employees.serializers import EmployeeSerializer
+from accounts.serializers import AccountSerializer
 
 class RoomTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,16 +8,45 @@ class RoomTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RoomSerializer(serializers.ModelSerializer):
-    room_type_detail = RoomTypeSerializer(source='room_type', read_only=True)
+    # For reading: return full room type details
+    room_type = RoomTypeSerializer(read_only=True)
+    effective_price = serializers.ReadOnlyField(source='get_effective_price')
+    
+    # For writing: accept room type ID
+    room_type_id = serializers.IntegerField(write_only=True)
     
     class Meta:
         model = Room
         fields = '__all__'
+    
+    def create(self, validated_data):
+        # Extract room_type_id and get the RoomType instance
+        room_type_id = validated_data.pop('room_type_id', None)
+        if room_type_id:
+            try:
+                room_type = RoomType.objects.get(id=room_type_id)
+                validated_data['room_type'] = room_type
+            except RoomType.DoesNotExist:
+                raise serializers.ValidationError({'room_type_id': 'Room type not found'})
+        
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        # Extract room_type_id and get the RoomType instance
+        room_type_id = validated_data.pop('room_type_id', None)
+        if room_type_id:
+            try:
+                room_type = RoomType.objects.get(id=room_type_id)
+                validated_data['room_type'] = room_type
+            except RoomType.DoesNotExist:
+                raise serializers.ValidationError({'room_type_id': 'Room type not found'})
+        
+        return super().update(instance, validated_data)
 
 class BookingSerializer(serializers.ModelSerializer):
-    customer_detail = CustomerSerializer(source='customer', read_only=True)
+    customer_detail = AccountSerializer(source='customer', read_only=True)
     room_detail = RoomSerializer(source='room', read_only=True)
-    created_by_detail = EmployeeSerializer(source='created_by', read_only=True)
+    created_by_detail = AccountSerializer(source='created_by', read_only=True)
     nights = serializers.ReadOnlyField()
     is_paid = serializers.ReadOnlyField()
     

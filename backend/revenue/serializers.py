@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from .models import RevenueReport, Payment, PaymentMethod
+from .models import RevenueReport, Payment, PaymentMethod, CustomerLoyalty
 from rooms.serializers import BookingSerializer
-from services.serializers import ServiceOrderSerializer
+from customers.serializers import CustomerSerializer
+# from services.serializers import ServiceOrderSerializer  # Tạm comment
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,7 +11,7 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
 
 class PaymentSerializer(serializers.ModelSerializer):
     booking_detail = BookingSerializer(source='booking', read_only=True)
-    service_order_detail = ServiceOrderSerializer(source='service_order', read_only=True)
+    # service_order_detail = ServiceOrderSerializer(source='service_order', read_only=True)  # Tạm comment
     payment_method_detail = PaymentMethodSerializer(source='payment_method', read_only=True)
     
     class Meta:
@@ -26,3 +27,11 @@ class RevenueReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = RevenueReport
         fields = '__all__'
+
+class CustomerLoyaltySerializer(serializers.ModelSerializer):
+    customer_detail = CustomerSerializer(source='customer', read_only=True)
+    
+    class Meta:
+        model = CustomerLoyalty
+        fields = ['id', 'customer', 'customer_detail', 'tier', 'total_spent', 
+                 'total_bookings', 'last_booking_date', 'created_at', 'updated_at']

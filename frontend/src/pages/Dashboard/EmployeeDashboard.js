@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Card, Row, Col, Statistic, Typography, Button, Avatar, Dropdown, List, Badge } from 'antd';
 import {
   DashboardOutlined,
@@ -11,9 +11,15 @@ import {
   BellOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  BarChartOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import BookingManagement from '../../components/Admin/BookingManagement';
+import RoomManagement from '../../components/Admin/RoomManagement';
+import CustomerManagement from '../../components/Admin/CustomerManagement';
+import RevenueStatistics from '../../components/Statistics/RevenueStatistics';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -21,26 +27,34 @@ const { Title, Text } = Typography;
 const EmployeeDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [selectedMenuItem, setSelectedMenuItem] = useState('dashboard');
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />}>
-        Thông tin cá nhân
-      </Menu.Item>
-      <Menu.Item key="settings" icon={<SettingOutlined />}>
-        Cài đặt
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Đăng xuất
-      </Menu.Item>
-    </Menu>
-  );
+  const userMenuItems = [
+    {
+      key: 'profile',
+      label: 'Thông tin cá nhân',
+      icon: <UserOutlined />,
+    },
+    {
+      key: 'settings',
+      label: 'Cài đặt',
+      icon: <SettingOutlined />,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      label: 'Đăng xuất',
+      icon: <LogoutOutlined />,
+      onClick: handleLogout,
+    },
+  ];
 
   const menuItems = [
     {
@@ -54,14 +68,19 @@ const EmployeeDashboard = () => {
       label: 'Quản lý đặt phòng',
     },
     {
-      key: 'customers',
-      icon: <UserOutlined />,
-      label: 'Khách hàng',
-    },
-    {
       key: 'rooms',
       icon: <HomeOutlined />,
-      label: 'Trạng thái phòng',
+      label: 'Quản lý phòng',
+    },
+    {
+      key: 'customers',
+      icon: <TeamOutlined />,
+      label: 'Quản lý khách hàng',
+    },
+    {
+      key: 'statistics',
+      icon: <BarChartOutlined />,
+      label: 'Thống kê doanh thu',
     },
     {
       key: 'services',
@@ -108,6 +127,8 @@ const EmployeeDashboard = () => {
           theme="dark"
           mode="inline"
           defaultSelectedKeys={['dashboard']}
+          selectedKeys={[selectedMenuItem]}
+          onClick={({ key }) => setSelectedMenuItem(key)}
           items={menuItems}
         />
       </Sider>
@@ -131,13 +152,26 @@ const EmployeeDashboard = () => {
             <Badge count={3}>
               <Button type="text" icon={<BellOutlined />} />
             </Badge>
-            <Dropdown overlay={userMenu} placement="bottomRight">
-              <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <Avatar icon={<UserOutlined />} style={{ marginRight: 8 }} />
-                <div>
-                  <Text strong>{user?.first_name} {user?.last_name}</Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: 12 }}>Nhân viên</Text>
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', maxWidth: '150px' }}>
+                <Avatar icon={<UserOutlined />} style={{ marginRight: 8, flexShrink: 0 }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ 
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    lineHeight: '1.2'
+                  }}>
+                    <Text strong>Chào {user?.last_name}!</Text>
+                  </div>
+                  <div style={{ 
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    lineHeight: '1.2'
+                  }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Nhân viên</Text>
+                  </div>
                 </div>
               </div>
             </Dropdown>
@@ -145,154 +179,183 @@ const EmployeeDashboard = () => {
         </Header>
 
         <Content style={{ margin: 24, overflow: 'initial' }}>
-          {/* Today's Overview */}
-          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="Check-in hôm nay"
-                  value={12}
-                  prefix={<UserOutlined />}
-                  valueStyle={{ color: '#3f8600' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="Check-out hôm nay"
-                  value={8}
-                  prefix={<UserOutlined />}
-                  valueStyle={{ color: '#cf1322' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="Phòng trống"
-                  value={35}
-                  prefix={<HomeOutlined />}
-                  valueStyle={{ color: '#1890ff' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="Nhiệm vụ còn lại"
-                  value={3}
-                  prefix={<ClockCircleOutlined />}
-                  valueStyle={{ color: '#faad14' }}
-                />
-              </Card>
-            </Col>
-          </Row>
+          {/* Dashboard Content */}
+          {selectedMenuItem === 'dashboard' && (
+            <>
+              {/* Today's Overview */}
+              <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card>
+                    <Statistic
+                      title="Check-in hôm nay"
+                      value={12}
+                      prefix={<UserOutlined />}
+                      valueStyle={{ color: '#3f8600' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card>
+                    <Statistic
+                      title="Check-out hôm nay"
+                      value={8}
+                      prefix={<UserOutlined />}
+                      valueStyle={{ color: '#cf1322' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card>
+                    <Statistic
+                      title="Phòng trống"
+                      value={35}
+                      prefix={<HomeOutlined />}
+                      valueStyle={{ color: '#1890ff' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card>
+                    <Statistic
+                      title="Nhiệm vụ còn lại"
+                      value={3}
+                      prefix={<ClockCircleOutlined />}
+                      valueStyle={{ color: '#faad14' }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
 
-          {/* Quick Actions */}
-          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-            <Col span={24}>
-              <Card title="Thao tác nhanh">
-                <Row gutter={16}>
-                  <Col xs={24} sm={12} md={6}>
-                    <Button 
-                      type="primary"
-                      block 
-                      size="large" 
-                      style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <UserOutlined style={{ fontSize: 24, marginBottom: 8 }} />
-                      Check-in
-                    </Button>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Button 
-                      block 
-                      size="large"
-                      style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <UserOutlined style={{ fontSize: 24, marginBottom: 8 }} />
-                      Check-out
-                    </Button>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Button 
-                      block 
-                      size="large"
-                      style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <HomeOutlined style={{ fontSize: 24, marginBottom: 8 }} />
-                      Trạng thái phòng
-                    </Button>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Button 
-                      block 
-                      size="large"
-                      style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <CustomerServiceOutlined style={{ fontSize: 24, marginBottom: 8 }} />
-                      Dịch vụ
-                    </Button>
-                  </Col>
-                </Row>
-              </Card>
-            </Col>
-          </Row>
+              {/* Quick Actions */}
+              <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col span={24}>
+                  <Card title="Thao tác nhanh">
+                    <Row gutter={16}>
+                      <Col xs={24} sm={12} md={6}>
+                        <Button 
+                          type="primary"
+                          block 
+                          size="large" 
+                          onClick={() => setSelectedMenuItem('bookings')}
+                          style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <CalendarOutlined style={{ fontSize: 24, marginBottom: 8 }} />
+                          Quản lý đặt phòng
+                        </Button>
+                      </Col>
+                      <Col xs={24} sm={12} md={6}>
+                        <Button 
+                          block 
+                          size="large"
+                          onClick={() => setSelectedMenuItem('rooms')}
+                          style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <HomeOutlined style={{ fontSize: 24, marginBottom: 8 }} />
+                          Quản lý phòng
+                        </Button>
+                      </Col>
+                      <Col xs={24} sm={12} md={6}>
+                        <Button 
+                          block 
+                          size="large"
+                          onClick={() => setSelectedMenuItem('customers')}
+                          style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <TeamOutlined style={{ fontSize: 24, marginBottom: 8 }} />
+                          Quản lý khách hàng
+                        </Button>
+                      </Col>
+                      <Col xs={24} sm={12} md={6}>
+                        <Button 
+                          block 
+                          size="large"
+                          onClick={() => setSelectedMenuItem('statistics')}
+                          style={{ height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <BarChartOutlined style={{ fontSize: 24, marginBottom: 8 }} />
+                          Thống kê doanh thu
+                        </Button>
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+              </Row>
 
-          <Row gutter={[16, 16]}>
-            <Col xs={24} lg={12}>
-              <Card title="Nhiệm vụ hôm nay" extra={<Badge count={3} />}>
-                <List
-                  itemLayout="horizontal"
-                  dataSource={todayTasks}
-                  renderItem={item => (
-                    <List.Item
-                      actions={[
-                        item.status === 'completed' ? (
-                          <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                        ) : (
-                          <Button size="small" type="primary">
-                            Hoàn thành
-                          </Button>
-                        )
-                      ]}
-                    >
-                      <List.Item.Meta
-                        title={
-                          <Text 
-                            style={{ 
-                              textDecoration: item.status === 'completed' ? 'line-through' : 'none',
-                              color: item.status === 'completed' ? '#999' : 'inherit'
-                            }}
-                          >
-                            {item.task}
+              {/* Tasks and Activities */}
+              <Row gutter={[16, 16]}>
+                <Col xs={24} lg={12}>
+                  <Card title="Nhiệm vụ hôm nay" extra={<Badge count={3} />}>
+                    <List
+                      itemLayout="horizontal"
+                      dataSource={todayTasks}
+                      renderItem={item => (
+                        <List.Item
+                          actions={[
+                            item.status === 'completed' ? (
+                              <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                            ) : (
+                              <Button size="small" type="primary">
+                                Hoàn thành
+                              </Button>
+                            )
+                          ]}
+                        >
+                          <List.Item.Meta
+                            title={
+                              <Text 
+                                style={{ 
+                                  textDecoration: item.status === 'completed' ? 'line-through' : 'none',
+                                  color: item.status === 'completed' ? '#999' : 'inherit'
+                                }}
+                              >
+                                {item.task}
+                              </Text>
+                            }
+                            description={`Thời gian: ${item.time}`}
+                          />
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                </Col>
+                
+                <Col xs={24} lg={12}>
+                  <Card title="Hoạt động gần đây">
+                    <div style={{ maxHeight: 300, overflow: 'auto' }}>
+                      {[1, 2, 3, 4, 5].map(item => (
+                        <div key={item} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                          <Text strong>Check-in phòng 10{item}</Text>
+                          <br />
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            Khách: Trần Thị B - {item * 10} phút trước
                           </Text>
-                        }
-                        description={`Thời gian: ${item.time}`}
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
-            </Col>
-            
-            <Col xs={24} lg={12}>
-              <Card title="Hoạt động gần đây">
-                <div style={{ maxHeight: 300, overflow: 'auto' }}>
-                  {[1, 2, 3, 4, 5].map(item => (
-                    <div key={item} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                      <Text strong>Check-in phòng 10{item}</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Khách: Trần Thị B - {item * 10} phút trước
-                      </Text>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </Card>
-            </Col>
-          </Row>
+                  </Card>
+                </Col>
+              </Row>
+            </>
+          )}
+
+          {/* Booking Management */}
+          {selectedMenuItem === 'bookings' && <BookingManagement />}
+
+          {/* Room Management */}
+          {selectedMenuItem === 'rooms' && <RoomManagement />}
+
+          {/* Customer Management */}
+          {selectedMenuItem === 'customers' && <CustomerManagement />}
+
+          {/* Statistics */}
+          {selectedMenuItem === 'statistics' && <RevenueStatistics />}
+
+          {/* Services */}
+          {selectedMenuItem === 'services' && (
+            <Card title="Quản lý dịch vụ">
+              <p>Tính năng quản lý dịch vụ sẽ được phát triển ở đây...</p>
+            </Card>
+          )}
         </Content>
       </Layout>
     </Layout>

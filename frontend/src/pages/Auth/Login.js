@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, Tabs, Select, Space, Divider } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, HomeOutlined, CalendarOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, HomeOutlined, CalendarOutlined, IdcardOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -55,8 +55,18 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <Card className="login-form" style={{ width: 500 }}>
+    <div className="login-container" style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '100vh',
+      padding: '20px' 
+    }}>
+      <Card className="login-form" style={{ 
+        width: '100%', 
+        maxWidth: 700,
+        minWidth: 400 
+      }}>
         <Title level={2} className="login-title" style={{ textAlign: 'center', marginBottom: 30 }}>
           Hệ thống quản lý khách sạn
         </Title>
@@ -255,6 +265,22 @@ const Login = () => {
                 <Input 
                   type="date"
                   prefix={<CalendarOutlined />}
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="id_card_number"
+                label="Số CCCD/CMND"
+                rules={[
+                  {
+                    pattern: /^\d{9,12}$/,
+                    message: 'Số CCCD/CMND phải từ 9-12 chữ số!',
+                  },
+                ]}
+              >
+                <Input 
+                  prefix={<IdcardOutlined />}
+                  placeholder="Số CCCD/CMND (không bắt buộc)"
                 />
               </Form.Item>
 

@@ -1,39 +1,93 @@
 from rest_framework import serializers
-from .models import Service, ServiceCategory, ServiceOrder
-from customers.serializers import CustomerSerializer
-from employees.serializers import EmployeeSerializer
-from rooms.serializers import BookingSerializer
+from .models import Service, ServiceCategory, RoomServiceOrder, RoomServiceItem
+from rooms.models import Room
+from accounts.models import Account
+
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
+    services_count = serializers.SerializerMethodField()
+    
     class Meta:
         model = ServiceCategory
-        fields = '__all__'
+        fields = ['id', 'name', 'description', 'icon', 'is_active', 'sort_order', 'services_count']
+    
+    def get_services_count(self, obj):
+        return obj.services.filter(is_available=True).count()
+
 
 class ServiceSerializer(serializers.ModelSerializer):
-    category_detail = ServiceCategorySerializer(source='category', read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
     
     class Meta:
         model = Service
-        fields = '__all__'
+        fields = ['id', 'name', 'description', 'category', 'category_name', 'price', 'unit', 
+                 'preparation_time', 'is_available']
 
-class ServiceOrderSerializer(serializers.ModelSerializer):
-    customer_detail = CustomerSerializer(source='customer', read_only=True)
-    booking_detail = BookingSerializer(source='booking', read_only=True)
-    service_detail = ServiceSerializer(source='service', read_only=True)
-    assigned_employee_detail = EmployeeSerializer(source='assigned_employee', read_only=True)
-    created_by_detail = EmployeeSerializer(source='created_by', read_only=True)
+
+class RoomServiceItemSerializer(serializers.ModelSerializer):
+    service_name = serializers.CharField(source='service.name', read_only=True)
+    service_unit = serializers.CharField(source='service.unit', read_only=True)
+    service_price = serializers.DecimalField(source='service.price', max_digits=10, decimal_places=2, read_only=True)
+    total_amount = serializers.SerializerMethodField()
     
     class Meta:
-        model = ServiceOrder
-        fields = '__all__'
-
-class ServiceOrderCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ServiceOrder
-        exclude = ['order_id', 'unit_price', 'total_amount', 'created_by', 'created_at', 'updated_at']
+        model = RoomServiceItem
+        fields = ['id', 'service', 'service_name', 'service_unit', 'service_price',
+                 'quantity', 'unit_price', 'notes', 'total_amount']
     
-    def validate(self, data):
-        service = data['service']
-        if not service.is_available:
-            raise serializers.ValidationError("Dịch vụ này hiện không khả dụng")
-        return data
+    def get_total_amount(self, obj):
+        return obj.quantity * obj.unit_price
+
+
+class RoomServiceOrderSerializer(serializers.ModelSerializer):
+    items = RoomServiceItemSerializer(many=True, read_only=True)
+    room_number = serializers.CharField(source='room.room_number', read_only=True)
+    customer_name = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
+    total_items = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = RoomServiceOrder
+        fields = ['id', 'room', 'room_number', 'customer_name', 'order_number', 
+                 'status', 'payment_status', 'notes', 'ordered_at', 'completed_at',
+                 'total_amount', 'total_items', 'items']
+    
+    def get_customer_name(self, obj):
+        # Lấy booking hiện tại của phòng
+        current_booking = obj.room.bookings.filter(
+            check_in_date__lte=obj.ordered_at.date(),
+            check_out_date__gte=obj.ordered_at.date()
+        ).first()
+        if current_booking and current_booking.customer:
+            return current_booking.customer.full_name
+        return "Khách vãng lai"
+    
+    def get_total_amount(self, obj):
+        return sum(item.quantity * item.unit_price for item in obj.items.all())
+    
+    def get_total_items(self, obj):
+        return obj.items.count()
+
+
+class CreateRoomServiceOrderSerializer(serializers.ModelSerializer):
+    items = serializers.JSONField()
+    
+    class Meta:
+        model = RoomServiceOrder
+        fields = ['room', 'notes', 'items']
+    
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        order = RoomServiceOrder.objects.create(**validated_data)
+        
+        for item_data in items_data:
+            service = Service.objects.get(id=item_data['service_id'])
+            RoomServiceItem.objects.create(
+                order=order,
+                service=service,
+                quantity=item_data['quantity'],
+                unit_price=service.price,
+                notes=item_data.get('notes', '')
+            )
+        
+        return order

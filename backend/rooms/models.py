@@ -1,6 +1,7 @@
 from django.db import models
-from customers.models import Customer
-from employees.models import Employee
+from django.contrib.auth import get_user_model
+
+Account = get_user_model()
 
 class RoomType(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -24,6 +25,8 @@ class Room(models.Model):
     room_number = models.CharField(max_length=10, unique=True)
     room_type = models.ForeignKey(RoomType, on_delete=models.CASCADE)
     floor = models.IntegerField()
+    price_per_night = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, 
+                                         help_text="Giá riêng cho phòng này (để trống sẽ dùng giá của loại phòng)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     is_active = models.BooleanField(default=True)
     last_cleaned = models.DateTimeField(null=True, blank=True)
@@ -31,6 +34,10 @@ class Room(models.Model):
     
     def __str__(self):
         return f"Phòng {self.room_number} - {self.room_type.name}"
+    
+    def get_effective_price(self):
+        """Trả về giá hiệu quả: giá riêng của phòng hoặc giá của loại phòng"""
+        return self.price_per_night if self.price_per_night else self.room_type.price_per_night
 
 class Booking(models.Model):
     STATUS_CHOICES = [
@@ -42,7 +49,7 @@ class Booking(models.Model):
     ]
     
     booking_id = models.CharField(max_length=20, unique=True)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Account, on_delete=models.CASCADE, limit_choices_to={'user_type': 'customer'})
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     check_in_date = models.DateField()
     check_out_date = models.DateField()
@@ -54,12 +61,14 @@ class Booking(models.Model):
     paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     special_requests = models.TextField(blank=True)
-    created_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, 
+                                   related_name='created_bookings',
+                                   limit_choices_to={'user_type__in': ['admin', 'employee']})
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.booking_id} - {self.customer.full_name} - Phòng {self.room.room_number}"
+        return f"{self.booking_id} - {self.customer.get_full_name()} - Phòng {self.room.room_number}"
     
     @property
     def nights(self):

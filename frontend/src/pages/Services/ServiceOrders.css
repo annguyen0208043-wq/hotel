@@ -1,0 +1,176 @@
+.service-orders {
+    padding: 24px;
+}
+
+.stats-row {
+    margin-bottom: 24px;
+}
+
+.rooms-grid {
+    margin-top: 16px;
+}
+
+.room-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 180px;
+}
+
+.room-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.room-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.room-header h5 {
+    margin: 0;
+}
+
+.room-info {
+    margin-bottom: 16px;
+}
+
+.room-info div {
+    margin-bottom: 4px;
+}
+
+.room-stats {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 12px;
+}
+
+.room-stats .ant-row {
+    margin-bottom: 8px;
+}
+
+.room-revenue {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.room-modal-header {
+    background-color: #fafafa;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+/* Room status colors */
+.room-card[style*="border-color: #52c41a"] {
+    border-width: 2px;
+    border-style: solid;
+}
+
+.room-card[style*="border-color: #fa8c16"] {
+    border-width: 2px;
+    border-style: solid;
+}
+
+.room-card[style*="border-color: #d9d9d9"] {
+    border-width: 1px;
+    border-style: dashed;
+}
+
+/* Badge styling */
+.ant-badge {
+    margin-right: 8px;
+}
+
+.ant-badge .anticon {
+    margin-right: 4px;
+}
+
+/* Table styling */
+.ant-table-expanded-row {
+    background-color: #fafafa;
+}
+
+.ant-table-expanded-row .ant-table-cell {
+    padding: 16px 24px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .service-orders {
+        padding: 12px;
+    }
+
+    .room-card {
+        min-height: 160px;
+    }
+
+    .stats-row .ant-col {
+        margin-bottom: 12px;
+    }
+}
+
+/* Status indicators */
+.pending-indicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Service category tabs */
+.ant-tabs .ant-tabs-tab {
+    padding: 8px 16px;
+}
+
+.ant-tabs .ant-tabs-tab .anticon {
+    margin-right: 8px;
+}
+
+/* Order status tags */
+.ant-tag {
+    font-weight: 500;
+}
+
+/* Loading states */
+.loading-card {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.loading-card .anticon {
+    font-size: 48px;
+    color: #1890ff;
+    margin-bottom: 16px;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state .anticon {
+    font-size: 64px;
+    color: #d9d9d9;
+    margin-bottom: 16px;
+}
+
+.empty-state h4 {
+    color: #666;
+}
+
+.empty-state p {
+    color: #999;
+}

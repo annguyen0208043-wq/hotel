@@ -6,7 +6,8 @@ from django.contrib.auth import login
 from .models import Account, CustomerProfile, EmployeeProfile
 from .serializers import (
     AccountSerializer, CustomerProfileSerializer, 
-    EmployeeProfileSerializer, RegisterSerializer, LoginSerializer
+    EmployeeProfileSerializer, RegisterSerializer, LoginSerializer,
+    AdminUserCreateSerializer, AdminUserUpdateSerializer
 )
 
 class AccountViewSet(viewsets.ModelViewSet):
@@ -48,18 +49,53 @@ class AccountViewSet(viewsets.ModelViewSet):
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get', 'put'])
     def profile(self, request):
         user = request.user
-        data = AccountSerializer(user).data
         
-        # Thêm thông tin profile tương ứng
-        if hasattr(user, 'customer_profile'):
-            data['profile'] = CustomerProfileSerializer(user.customer_profile).data
-        elif hasattr(user, 'employee_profile'):
-            data['profile'] = EmployeeProfileSerializer(user.employee_profile).data
+        if request.method == 'GET':
+            data = AccountSerializer(user).data
+            
+            # Thêm thông tin profile tương ứng
+            if hasattr(user, 'customer_profile'):
+                data['profile'] = CustomerProfileSerializer(user.customer_profile).data
+            elif hasattr(user, 'employee_profile'):
+                data['profile'] = EmployeeProfileSerializer(user.employee_profile).data
+            
+            return Response(data)
         
-        return Response(data)
+        elif request.method == 'PUT':
+            # Cập nhật thông tin profile
+            data = request.data.copy()
+            id_card_number = data.pop('id_card_number', None)
+            
+            # Cập nhật Account fields
+            serializer = AccountSerializer(user, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                
+                # Cập nhật CustomerProfile nếu là customer
+                if user.user_type == 'customer':
+                    customer_profile, created = CustomerProfile.objects.get_or_create(
+                        user=user,
+                        defaults={'id_card_number': id_card_number}
+                    )
+                    if not created and id_card_number is not None:
+                        customer_profile.id_card_number = id_card_number
+                        customer_profile.save()
+                    
+                    # Cập nhật trạng thái is_verified dựa trên CCCD
+                    user.is_verified = bool(customer_profile.id_card_number)
+                    user.save()
+                
+                # Trả về dữ liệu mới
+                updated_data = AccountSerializer(user).data
+                if hasattr(user, 'customer_profile'):
+                    updated_data['profile'] = CustomerProfileSerializer(user.customer_profile).data
+                
+                return Response(updated_data)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'])
     def change_password(self, request):
@@ -192,3 +228,76 @@ class EmployeeViewSet(viewsets.GenericViewSet):
             data['profile'] = EmployeeProfileSerializer(user.employee_profile).data
         
         return Response(data)
+
+# Admin Management ViewSets
+class AdminEmployeeViewSet(viewsets.ModelViewSet):
+    """Admin và Employee quản lý nhân viên"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Admin, superuser và employee có quyền truy cập
+        user_type = getattr(self.request.user, 'user_type', None)
+        print(f"User: {self.request.user}, Type: {user_type}, Is superuser: {self.request.user.is_superuser}")
+        if not (self.request.user.is_superuser or user_type in ['admin', 'employee']):
+            return Account.objects.none()
+        return Account.objects.filter(user_type__in=['employee', 'admin'])
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return AdminUserCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return AdminUserUpdateSerializer
+        return AccountSerializer
+    
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Ngăn admin tự sửa thông tin chính mình
+        if request.user.id == instance.id:
+            return Response(
+                {'error': 'Không thể tự chỉnh sửa thông tin tài khoản của chính mình'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        return super().update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Ngăn admin tự xóa tài khoản chính mình
+        if request.user.id == instance.id:
+            return Response(
+                {'error': 'Không thể tự xóa tài khoản của chính mình'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Ngăn xóa tài khoản admin (chỉ cho phép vô hiệu hóa)
+        if instance.user_type == 'admin':
+            return Response(
+                {'error': 'Không thể xóa tài khoản admin. Vui lòng sử dụng chức năng vô hiệu hóa.'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        return super().destroy(request, *args, **kwargs)
+
+class AdminCustomerViewSet(viewsets.ModelViewSet):
+    """Admin và Employee quản lý khách hàng"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Admin, superuser và employee có quyền truy cập
+        user_type = getattr(self.request.user, 'user_type', None)
+        if not (self.request.user.is_superuser or user_type in ['admin', 'employee']):
+            return Account.objects.none()
+        return Account.objects.filter(user_type='customer')
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return AdminUserCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return AdminUserUpdateSerializer
+        return AccountSerializer
+    
+    def perform_create(self, serializer):
+        # Đảm bảo user_type là customer
+        serializer.save(user_type='customer')

@@ -17,6 +17,8 @@ import Services from './pages/Services/Services';
 import ServiceOrders from './pages/Services/ServiceOrders';
 import Revenue from './pages/Revenue/Revenue';
 import Reports from './pages/Reports/Reports';
+import BookRoom from './components/Customer/BookRoom';
+import MyBookings from './components/Customer/MyBookings';
 
 const { Content } = Layout;
 
@@ -126,6 +128,33 @@ function App() {
             element={
               <RoleBasedRoute allowedRoles={['customer']}>
                 <CustomerDashboard />
+              </RoleBasedRoute>
+            } 
+          />
+
+          {/* Customer Routes */}
+          <Route 
+            path="/book-room" 
+            element={
+              <RoleBasedRoute allowedRoles={['customer']}>
+                <MainLayout>
+                  <Content style={{ margin: '24px 16px', padding: 24, minHeight: 280 }}>
+                    <BookRoom />
+                  </Content>
+                </MainLayout>
+              </RoleBasedRoute>
+            } 
+          />
+
+          <Route 
+            path="/my-bookings" 
+            element={
+              <RoleBasedRoute allowedRoles={['customer']}>
+                <MainLayout>
+                  <Content style={{ margin: '24px 16px', padding: 24, minHeight: 280 }}>
+                    <MyBookings />
+                  </Content>
+                </MainLayout>
               </RoleBasedRoute>
             } 
           />

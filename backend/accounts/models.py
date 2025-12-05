@@ -25,7 +25,7 @@ class Account(AbstractUser):
 
 class CustomerProfile(models.Model):
     user = models.OneToOneField(Account, on_delete=models.CASCADE, related_name='customer_profile')
-    id_card_number = models.CharField(max_length=20, unique=True, blank=True)
+    id_card_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
     nationality = models.CharField(max_length=50, default='Vietnam')
     emergency_contact = models.CharField(max_length=15, blank=True)
     is_vip = models.BooleanField(default=False)

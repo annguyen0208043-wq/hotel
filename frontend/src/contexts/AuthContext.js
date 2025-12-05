@@ -68,12 +68,16 @@ const AuthProvider = ({ children }) => {
       const response = await api.post(loginEndpoint, credentials);
       const { access, refresh, user: userData } = response.data;
       
+      console.log('Login successful:', userData);
+      console.log('User type from backend:', userData.user_type);
+      console.log('User type parameter:', userType);
+      
       // Store tokens and user type in cookies
       Cookies.set('access_token', access, { expires: 1 }); // 1 day
       Cookies.set('refresh_token', refresh, { expires: 7 }); // 7 days
-      Cookies.set('user_type', userType, { expires: 7 });
+      Cookies.set('user_type', userData.user_type || userType, { expires: 7 });
       
-      setUser({ ...userData, user_type: userType });
+      setUser({ ...userData, user_type: userData.user_type || userType });
       message.success('Đăng nhập thành công!');
       return true;
     } catch (error) {

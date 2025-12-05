@@ -98,20 +98,27 @@ const MainLayout = ({ children }) => {
     navigate('/login');
   };
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />}>
-        Thông tin cá nhân
-      </Menu.Item>
-      <Menu.Item key="settings" icon={<SettingOutlined />}>
-        Cài đặt
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Đăng xuất
-      </Menu.Item>
-    </Menu>
-  );
+  const userMenuItems = [
+    {
+      key: 'profile',
+      label: 'Thông tin cá nhân',
+      icon: <UserOutlined />,
+    },
+    {
+      key: 'settings',
+      label: 'Cài đặt',
+      icon: <SettingOutlined />,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      label: 'Đăng xuất',
+      icon: <LogoutOutlined />,
+      onClick: handleLogout,
+    },
+  ];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -164,8 +171,15 @@ const MainLayout = ({ children }) => {
           />
           
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Text>Xin chào, {user?.first_name} {user?.last_name}</Text>
-            <Dropdown overlay={userMenu} placement="bottomRight">
+            <Text style={{ 
+              maxWidth: '120px', 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap' 
+            }}>
+              Xin chào, {user?.last_name}
+            </Text>
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Avatar 
                 style={{ backgroundColor: '#1890ff', cursor: 'pointer' }}
                 icon={<UserOutlined />}
